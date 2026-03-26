@@ -8,9 +8,6 @@ import random
 from scipy.optimize import minimize
 from scipy.stats import norm
 
-# =============================================================================
-# CONFIGURATION
-# =============================================================================
 
 TICKERS = ['SPY', 'QQQ', 'TLT', 'GLD']
 START_DATE = '2010-01-01'
@@ -34,9 +31,7 @@ logger.info(f"Using historical data from {START_DATE} to {END_DATE} for calibrat
 logger.info(f"Drift type: {DRIFT_TYPE}")
 logger.info(f"Shorting allowed for mean-variance: {ALLOW_SHORTING}")
 
-# =============================================================================
-# FETCH HISTORICAL DATA & CALIBRATE PARAMETERS
-# =============================================================================
+# data processing
 
 try:
     data = yf.download(TICKERS, start=START_DATE, end=END_DATE, auto_adjust=False)['Adj Close']
@@ -79,9 +74,7 @@ latest_prices = data.iloc[-1].values
 logger.info(f"Latest prices: {dict(zip(TICKERS, latest_prices))}")
 logger.info(f"Annualised volatilities: {dict(zip(TICKERS, annual_vol))}")
 
-# =============================================================================
-# PORTFOLIO OPTIMISATION FUNCTIONS
-# =============================================================================
+# optimization functions
 
 def mean_variance_weights(mu, cov, rf, allow_short=False):
     """Maximise Sharpe ratio.
@@ -137,9 +130,7 @@ def low_vol_weights(vols):
     inv_vol = 1 / vols
     return inv_vol / inv_vol.sum()
 
-# =============================================================================
-# COMPUTE TARGET WEIGHTS FOR EACH STRATEGY
-# =============================================================================
+# set weights for each strategy
 
 strategies = {}
 
@@ -166,9 +157,7 @@ logger.info("\nOptimised weights:")
 for name, w in strategies.items():
     logger.info(f"{name}: {dict(zip(TICKERS, w.round(4)))}")
 
-# =============================================================================
-# MONTE CARLO SIMULATION (PRICE PATHS)
-# =============================================================================
+# MC Simulator
 
 # Cholesky decomposition
 reg = 1e-8
@@ -191,9 +180,7 @@ for t in range(1, HORIZON_DAYS + 1):
     daily_log_returns = drift + correlated_innovations[:, t-1, :]
     prices[:, t, :] = prices[:, t-1, :] * np.exp(daily_log_returns)
 
-# =============================================================================
-# PORTFOLIO SIMULATION FOR EACH STRATEGY
-# =============================================================================
+# Simulator for each strategy
 
 results = {}
 
@@ -251,9 +238,7 @@ for strategy_name, target_weights in strategies.items():
         'Annualised Sharpe': sharpe,
     }
 
-# =============================================================================
-# DISPLAY RESULTS TABLE
-# =============================================================================
+# displaying results
 
 df_results = pd.DataFrame(results).T
 df_results = df_results.round(2)
@@ -262,9 +247,7 @@ logger.info("COMPARISON OF PORTFOLIO OPTIMISATION STRATEGIES")
 logger.info("="*70)
 print(df_results.to_string())
 
-# =============================================================================
-# VISUALISATIONS
-# =============================================================================
+# Plots
 
 sns.set_style("whitegrid")
 
